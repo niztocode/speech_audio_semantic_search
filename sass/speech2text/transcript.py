@@ -1,18 +1,25 @@
-from math import ceil
-from typing import Dict, Any
+import logging
 import os
+from typing import Any, Dict
 
 import librosa as la
-from speech2text.config import get_config
-from speech2text.model import SpeechToText
-from speech2text.utils import batch_data
+
+from sass.speech2text.config import get_config
+from sass.speech2text.model import SpeechToText
+from sass.speech2text.utils import batch_data
+
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(asctime)s | %(levelname)s | %(module)s | %(message)s",
+)
+logger = logging.getLogger(__name__)
 
 
 def audio_transcript(
     audio_file_path: str,
     frames_batch_size: int = 10,
     frame_seconds: int = 30,
-    overlap: float = 1,
+    overlap: float = 0,
 ) -> Dict[str, Any]:
     asr_model = SpeechToText(get_config().whisper_path)
     audio, sr = la.load(audio_file_path)
@@ -30,15 +37,22 @@ def audio_transcript(
         raise Exception("Overlap must be float ranging in (0, 1)")
 
     # Break the audio into frames
+    logger.info(
+        "Breaking into frames of %s length & %s samples",
+        frame_seconds,
+        frame_size,
+    )
     audio_frames = la.util.frame(
         audio_resampled, frame_length=frame_size, hop_length=hop_length
     ).transpose()
 
+    logger.info("Batching frames in batches of %s length", frames_batch_size)
     batches = batch_data(audio_frames, frames_batch_size)
 
     transcript_windows = []
     audio_windows = []
     start_end = []
+    logger.info("Generating transcripts...")
     for i, batch in enumerate(batches):
         for j in range(batch.shape[0]):
             frame_start = (
@@ -63,8 +77,8 @@ def audio_transcript(
             "overlap": overlap,
         },
         "start_end": start_end,
-        "audio": audio_windows,
-        "transcript": transcript_windows,
+        "audio_frames": audio_windows,
+        "frame_transcripts": transcript_windows,
     }
 
 

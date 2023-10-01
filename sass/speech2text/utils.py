@@ -1,12 +1,13 @@
-from typing import List, TYPE_CHECKING
+from typing import List
+
 import IPython.display as ipd
 import matplotlib.pyplot as plt
 import numpy as np
 
 
-def batch_data(data: np.array, batch_size):
+def batch_data(data: np.ndarray, batch_size) -> List[np.array]:
     return [
-        data[i : min(i + batch_size, len(data))]
+        np.array(data[i : min(i + batch_size, len(data))])
         for i in range(0, len(data), batch_size)
     ]
 
