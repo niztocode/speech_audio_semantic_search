@@ -2,6 +2,7 @@ import logging
 import os
 
 from sass.config import get_app_config
+from sass.db.weaviate_db import w_client
 from sass.load.weaviate import load_audio_data
 from sass.speech2text.transcript import audio_transcript
 
@@ -26,7 +27,15 @@ if __name__ == "__main__":
         if f.split(".")[-1] not in SOUND_FILE_EXTENSIONS:
             continue
 
+        r = w_client.query.get("AudioClip", ["title"]).do()
+        if f in [c["title"] for c in r["data"]["Get"]["AudioClip"]]:
+            logger.warning(
+                "'AudioClip' with name %s already exists in db. Skipping...",
+                f,
+            )
+            continue
+
         logger.info("Getting transcripts for file: '%s'", f)
-        trans = audio_transcript(f_path)
+        trans = audio_transcript(f_path, frame_seconds=20)
         logger.info("Loading data to db")
         load_audio_data(trans, f)

@@ -18,7 +18,7 @@ logger = logging.getLogger(__name__)
 def audio_transcript(
     audio_file_path: str,
     frames_batch_size: int = 10,
-    frame_seconds: int = 30,
+    frame_seconds: float = 30,
     overlap: float = 0,
 ) -> Dict[str, Any]:
     asr_model = SpeechToText(get_config().whisper_path)
@@ -87,7 +87,9 @@ if __name__ == "__main__":
     filename = audio_file_path.split("/")[-1].split(".")[0]
     transcript_outpath = f"transcripts/{filename}_transcript.txt"
 
-    transcript_data = audio_transcript(audio_file_path, overlap=0)
+    transcript_data = audio_transcript(
+        audio_file_path, frame_seconds=20, overlap=0
+    )
 
     transcripts = transcript_data["transcript"]
     start_end = transcript_data["start_end"]
