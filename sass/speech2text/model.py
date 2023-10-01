@@ -1,5 +1,5 @@
 import logging
-from typing import Optional, Union
+from typing import List, Optional, Union
 
 import numpy as np
 import torch
@@ -38,7 +38,7 @@ class SpeechToText:
         self,
         samples: np.ndarray,
         sampling_rate: Union[int, float],
-    ) -> torch.tensor:
+    ) -> torch.Tensor:
         return torch.from_numpy(
             np.concatenate(
                 [
