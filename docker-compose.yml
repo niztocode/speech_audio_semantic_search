@@ -1,0 +1,54 @@
+version: '3.4'
+services:
+  weaviate:
+    container_name: weaviate_dev
+    command:
+    - --host
+    - 0.0.0.0
+    - --port
+    - '8080'
+    - --scheme
+    - http
+    image: semitechnologies/weaviate:1.21.2
+    ports:
+    - 8080:8080
+    volumes:
+    - weaviate_data:/var/lib/weaviate
+    restart: on-failure:0
+    environment:
+      QUERY_DEFAULTS_LIMIT: 25
+      AUTHENTICATION_ANONYMOUS_ACCESS_ENABLED: 'true'
+      PERSISTENCE_DATA_PATH: '/var/lib/weaviate'
+      ENABLE_MODULES: 'text2vec-transformers, reranker_transformers'
+      DEFAULT_VECTORIZER_MODULE: 'text2vec-transformers'
+      RERANKER_INFERENCE_API: 'http://reranker-transformers:8080'
+      TRANSFORMERS_INFERENCE_API: 'http://t2v-transformers:8080'
+      CLUSTER_HOSTNAME: 'node1'
+    depends_on:
+      t2v-transformers:
+        condition: service_started
+      reranker-transformers:
+        condition: service_started
+    networks:
+      - dev_network
+  t2v-transformers:
+    container_name: "t2v-transformers"
+    image: semitechnologies/transformers-inference:sentence-transformers-multi-qa-MiniLM-L6-cos-v1
+    environment:
+      ENABLE_CUDA: 0
+    networks:
+      - dev_network
+  reranker-transformers:
+    container_name: "reranker-transformers"
+    image: semitechnologies/reranker-transformers:cross-encoder-ms-marco-MiniLM-L-6-v2
+    environment:
+      ENABLE_CUDA: 0
+    networks:
+      - dev_network
+
+volumes:
+  weaviate_data:
+
+networks:
+  dev_network:
+   external: true
