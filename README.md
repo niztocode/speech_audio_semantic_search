@@ -47,7 +47,7 @@ Our Weaviate DBMS runs in a docker containerized enviroment. Run `docker compose
 * `LIBRARY_PATH`: path to folder that contains audio files ( e.g. audio_clips/)
 
 #### DB Schema
-The schema of our vector database is located in the python module `sass.schema`. To create the schema in the database run: `python -m sass.schema`. There is also the option of deleting the schema of the database by providing the previous command with the argument `-d/--delete`. Run `python -m sass.schema -d` to delete the current database schema. _Warning_! This will also delete all class object stored in the database!
+The schema of our vector database is located in the python module `sass.db.schema`. To create the schema in the database run: `python -m sass.db.schema`. There is also the option of deleting the schema of the database by providing the previous command with the argument `-d/--delete`. Run `python -m sass.db.schema -d` to delete the current database schema. _Warning_! This will also delete all class object stored in the database!
 
 #### Updating Library
 Run `python -m sass.update_library` to process all the audio files in `LIBRARY_PATH` and store to db.
