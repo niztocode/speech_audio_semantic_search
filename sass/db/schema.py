@@ -1,6 +1,14 @@
 import argparse
 import logging
 
+from weaviate.classes.config import (
+    Configure,
+    DataType,
+    Property,
+    ReferenceProperty,
+    VectorDistances,
+)
+
 from sass.db.weaviate_db import w_client
 
 logging.basicConfig(
@@ -9,150 +17,72 @@ logging.basicConfig(
 )
 logger = logging.getLogger(__name__)
 
-audioclip_class_obj = {
-    "class": "AudioClip",
-    "description": "The audio clip's information and meta data.",
-    "vectorizer": "text2vec-transformers",
-    "moduleConfig": {"text2vec-transformers": {"vectorizeClassName": "false"}},
-    "properties": [
-        {
-            "name": "title",
-            "dataType": ["text"],
-            "description": "Title of audio clip file.",
-            "moduleConfig": {
-                "text2vec-transformers": {
-                    "skip": "false",
-                    "vectorizePropertyName": "true",
-                }
-            },
-        },
-        {
-            "name": "sample_ratio",
-            "dataType": ["int"],
-            "description": "Sample ratio of audio clip. Number of samples per second.",
-            "moduleConfig": {
-                "text2vec-transformers": {
-                    "skip": "true",
-                    "vectorizePropertyName": "false",
-                }
-            },
-        },
-        {
-            "name": "frame_overlap",
-            "dataType": ["int"],
-            "description": "Percentage of overlap between audio frames.",
-            "moduleConfig": {
-                "text2vec-transformers": {
-                    "skip": "true",
-                    "vectorizePropertyName": "false",
-                }
-            },
-        },
-        {
-            "name": "hasAudioFrame",
-            "dataType": ["AudioFrame"],
-            "description": "An audio clip is composed by a number of audio frames.",
-            "moduleConfig": {
-                "text2vec-transformers": {
-                    "skip": "true",
-                    "vectorizePropertyName": "false",
-                }
-            },
-        },
-    ],
-    "vectorIndexType": "hnsw",
-    "vectorIndexConfig": {
-        "distance": "cosine",
-    },
-}
-
-audioframe_class_obj = {
-    "class": "AudioFrame",
-    "description": "An audio frame is a part of audio clip containing audio and transcript information.",
-    "vectorizer": "text2vec-transformers",
-    "moduleConfig": {"text2vec-transformers": {"vectorizeClassName": "false"}},
-    "properties": [
-        # {
-        #    "name": "audio",
-        #    "description": "String containing frame's audio data in a 'json' form.",
-        #    "dataType": ["text"],
-        #    "moduleConfig": {
-        #        "text2vec-transformers": {
-        #            "skip": "true",
-        #            "vectorizePropertyName": "false",
-        #        }
-        #    },
-        # },
-        {
-            "name": "transcript",
-            "description": "String containing frame's transcript.",
-            "dataType": ["text"],
-            "moduleConfig": {
-                "text2vec-transformers": {
-                    "skip": "true",
-                    "vectorizePropertyName": "false",
-                }
-            },
-        },
-        {
-            "name": "start",
-            "description": "Start timestamp of frame.",
-            "dataType": ["number"],
-            "moduleConfig": {
-                "text2vec-transformers": {
-                    "skip": "true",
-                    "vectorizePropertyName": "false",
-                }
-            },
-        },
-        {
-            "name": "end",
-            "description": "End timestamp of frame.",
-            "dataType": ["number"],
-            "moduleConfig": {
-                "text2vec-transformers": {
-                    "skip": "true",
-                    "vectorizePropertyName": "false",
-                }
-            },
-        },
-    ],
-}
-
-schema = {"classes": [audioframe_class_obj, audioclip_class_obj]}
-
 
 def delete_schema():
-    db_classes = w_client.schema.get().get("classes", [])
-    for cls in db_classes:
-        logger.info("deleting %s class...", cls["class"])
-        w_client.schema.delete_class(cls["class"])
-    return
-
-
-def validate_db_schema():
-    db_classes = w_client.schema.get().get("classes", [])
-    db_classnames = [c["class"] for c in db_classes]
-
-    return bool(
-        sum(
-            [
-                True if cls["class"] not in db_classnames else False
-                for cls in schema["classes"]
-            ]
-        )
-    )
+    logger.info("deleting class %s and objects...", "AudioFrame")
+    w_client.collections.delete("AudioFrame")
+    logger.info("deleting class %s and objects...", "Segment")
+    w_client.collections.delete("Segment")
 
 
 def create_schema():
-    w_client.schema.create(schema)
-    return
+    logger.info("Creating class %s...", "Segment")
+    w_client.collections.create(
+        "Segment",
+        description="An audio segment is a part of audio clip containing speech transcripted information.",
+        vectorizer_config=Configure.Vectorizer.text2vec_transformers(
+            vectorize_collection_name=False
+        ),
+        properties=[
+            Property(
+                name="transcript",
+                data_type=DataType.TEXT,
+                description="String containing segments's transcript.",
+            ),
+            Property(
+                name="start",
+                data_type=DataType.NUMBER,
+                description="Start timestamp of segment.",
+            ),
+            Property(
+                name="end",
+                data_type=DataType.NUMBER,
+                description="End timestamp of segment.",
+            ),
+        ],
+        vector_index_config=Configure.VectorIndex.hnsw(
+            distance_metric=VectorDistances.COSINE
+        ),
+    )
+    logger.info("Creating class %s...", "AudioClip")
+    w_client.collections.create(
+        "AudioClip",
+        description="The audio clip's information and meta data.",
+        vectorizer_config=Configure.Vectorizer.text2vec_transformers(
+            vectorize_collection_name=False
+        ),
+        properties=[
+            Property(
+                name="title",
+                data_type=DataType.TEXT,
+                description="Title of audio clip file.",
+            ),
+        ],
+        references=[
+            ReferenceProperty(
+                name="hasSegment",
+                target_collection="Segment",
+                description="An audio clip is composed by a number of segments that contain transcripted speech.",
+            )
+        ],
+        vector_index_config=Configure.VectorIndex.hnsw(
+            distance_metric=VectorDistances.COSINE
+        ),
+    )
 
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser(
-        description="Create/delete db schema and valitate"
-    )
+    parser = argparse.ArgumentParser(description="Create/delete db schema.")
     parser.add_argument(
         "-d",
         "--delete",
@@ -167,8 +97,3 @@ if __name__ == "__main__":
 
     logger.info("Creating schema")
     create_schema()
-
-    if not validate_db_schema():
-        logger.info("Schema validated")
-    else:
-        logger.warning("Invalid db schema")

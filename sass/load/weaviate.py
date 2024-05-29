@@ -1,7 +1,5 @@
 import logging
-from typing import Dict, List, Union
 
-import numpy as np
 from weaviate.util import generate_uuid5
 
 from sass.db.weaviate_db import w_client
@@ -10,51 +8,40 @@ logger = logging.getLogger(__name__)
 
 
 def load_audio_data(
-    data: Dict[str, Union[str, List[str], List["np.array"], int, float]],
-    filename: str,
-    batch_size: int = 5,
+    data: dict[str, str | int],
 ):
-    audio_clip_obj = {
-        "title": filename,
-        "sample_ratio": data["meta"]["sr"],
-        "frame_overlap": data["meta"]["overlap"],
-    }
-
-    w_client.batch.configure(batch_size=batch_size)
-
-    with w_client.batch as batch:
+    audioclip_collection = w_client.collections.get("AudioClip")
+    with w_client.collections.get("AudioClip").batch.dynamic() as batch:
         # load audio clip
-        r = w_client.query.get("AudioClip", ["title"]).do()
-        if filename in [c["title"] for c in r["data"]["Get"]["AudioClip"]]:
+        titles_db = [
+            item.properties.get("title") for item in audioclip_collection.iterator()
+        ]
+        if data["audioclip"]["title"] in titles_db:
             logger.warning(
                 "'AudioClip' with name %s already exists in db. Skipping...",
-                filename,
+                data["audioclip"]["title"],
             )
             return
-        uuid_clip = generate_uuid5(audio_clip_obj, "AudioClip")
-        batch.add_data_object(
-            data_object=audio_clip_obj,
-            class_name="AudioClip",
+        uuid_clip = generate_uuid5(data["audioclip"], "AudioClip")
+        batch.add_object(
             uuid=uuid_clip,
+            properties=data["audioclip"],
         )
-        for ft, se in zip(data["frame_transcripts"], data["start_end"]):
-            audio_frame_obj = {
-                # "audio": json.dumps({"data": af}, cls=NumpyArrayEncoder),
-                "transcript": ft,
-                "start": se[0],
-                "end": se[1],
-            }
-            uuid_frame = generate_uuid5(audio_frame_obj, "AudioFrame")
-            batch.add_data_object(
-                data_object=audio_frame_obj,
-                class_name="AudioFrame",
+
+    segments_collection = w_client.collections.get("Segment")
+    reference_ids = []
+    with segments_collection.batch.dynamic() as batch:
+        for seg in data["segments"]:
+            uuid_frame = generate_uuid5(seg, "Segment")
+            batch.add_object(
                 uuid=uuid_frame,
+                properties=seg,
             )
-            batch.add_reference(
-                from_object_uuid=uuid_clip,
-                from_object_class_name="AudioClip",
-                from_property_name="hasAudioFrame",
-                to_object_uuid=uuid_frame,
-                to_object_class_name="AudioFrame",
-            )
+            reference_ids.append(uuid_frame)
+
+        batch.add_reference(
+            from_uuid=uuid_clip,
+            from_property="hasSegment",
+            to=reference_ids,
+        )
     return
