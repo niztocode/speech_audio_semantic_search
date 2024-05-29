@@ -26,9 +26,11 @@ if __name__ == "__main__":
 
         if f.split(".")[-1] not in SOUND_FILE_EXTENSIONS:
             continue
-
-        r = w_client.query.get("AudioClip", ["title"]).do()
-        if f in [c["title"] for c in r["data"]["Get"]["AudioClip"]]:
+        audioclip_collection = w_client.collections.get("AudioClip")
+        titles_db = [
+            item.properties.get("title") for item in audioclip_collection.iterator()
+        ]
+        if f in titles_db:
             logger.warning(
                 "'AudioClip' with name %s already exists in db. Skipping...",
                 f,
@@ -36,6 +38,7 @@ if __name__ == "__main__":
             continue
 
         logger.info("Getting transcripts for file: '%s'", f)
-        trans = audio_transcript(f_path, frame_seconds=20)
+        transcript_segments = audio_transcript(f_path)
+
         logger.info("Loading data to db")
-        load_audio_data(trans, f)
+        load_audio_data({"audioclip": {"title": f}, "segments": transcript_segments})

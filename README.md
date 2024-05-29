@@ -49,8 +49,37 @@ Our Weaviate DBMS runs in a docker containerized enviroment. Run `docker compose
 #### DB Schema
 The schema of our vector database is located in the python module `sass.db.schema`. To create the schema in the database run: `python -m sass.db.schema`. There is also the option of deleting the schema of the database by providing the previous command with the argument `-d/--delete`. Run `python -m sass.db.schema -d` to delete the current database schema. _Warning_! This will also delete all class object stored in the database!
 
+
 #### Updating Library
 Run `python -m sass.update_library` to process all the audio files in `LIBRARY_PATH` and store to db.
+
+#### Note: Faster-Whisper CTranslate2 bug
+Packages `torch`, `funtorch` & `faster-whisper` all use a different copy of the executable `libiomp5.dylib` to run C executables in python. However, during execution multiple instances of this library are initialized and linked to the program.
+
+```
+OMP: Error #15: Initializing libiomp5.dylib, but found libiomp5.dylib already initialized.
+
+OMP: Hint This means that multiple copies of the OpenMP runtime have been linked into the program. That is dangerous, since it can degrade performance or cause incorrect results. The best thing to do is to ensure that only a single OpenMP runtime is linked into the process, e.g. by avoiding static linking of the OpenMP runtime in any library. As an unsafe, unsupported, undocumented workaround you can set the environment variable KMP_DUPLICATE_LIB_OK=TRUE to allow the program to continue to execute, but that may cause crashes or silently produce incorrect results. For more information, please see http://www.intel.com/software/products/support/.
+```
+
+To avoid the above error and run Faster-Whisper successfully, do the following:
+```
+find  ~/.local/share/virtualenvs/<virtual_environment_name>/ -name "libiomp5.dylib"
+
+Output:
+~/.local/share/virtualenvs/<virtual_environment_name>/lib/python3.10/site-packages/torch/lib/libiomp5.dylib
+~/.local/share/virtualenvs/<virtual_environment_name>/lib/python3.10/site-packages/ctranslate2/.dylibs/libiomp5.dylib
+~/.local/share/virtualenvs/<virtual_environment_name>/lib/python3.10/site-packages/functorch/.dylibs/libiomp5.dylib
+```
+```
+rm ~/.local/share/virtualenvs/<virtual_environment_name>/lib/python3.10/site-packages/torch/lib/libiomp5.dylib
+rm ~/.local/share/virtualenvs/<virtual_environment_name>/lib/python3.10/site-packages/functorch/.dylibs/libiomp5.dylib
+```
+```
+ln ~/.local/share/virtualenvs/<virtual_environment_name>/lib/python3.10/site-packages/ctranslate2/.dylibs/libiomp5.dylib ~/.local/share/virtualenvs/<virtual_environment_name>/lib/python3.10/site-packages/torch/lib/libiomp5.dylib
+
+ln ~/.local/share/virtualenvs/<virtual_environment_name>/lib/python3.10/site-packages/ctranslate2/.dylibs/libiomp5.dylib ~/.local/share/virtualenvs/<virtual_environment_name>/lib/python3.10/site-packages/functorch/.dylibs/libiomp5.dylib
+```
 
 #### Search
 After you have updated your library with your speach audio clips, run `python -m sass.search`. Make text queries to the prompt and retrieve semantically similar context from your audio files' library.
