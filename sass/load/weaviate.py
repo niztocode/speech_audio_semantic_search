@@ -29,19 +29,17 @@ def load_audio_data(
         )
 
     segments_collection = w_client.collections.get("Segment")
-    reference_ids = []
     with segments_collection.batch.dynamic() as batch:
         for seg in data["segments"]:
-            uuid_frame = generate_uuid5(seg, "Segment")
+            uuid_seg = generate_uuid5(seg, "Segment")
             batch.add_object(
-                uuid=uuid_frame,
+                uuid=uuid_seg,
                 properties=seg,
             )
-            reference_ids.append(uuid_frame)
 
-        batch.add_reference(
-            from_uuid=uuid_clip,
-            from_property="hasSegment",
-            to=reference_ids,
-        )
+            batch.add_reference(
+                from_uuid=uuid_seg,
+                from_property="belongsToAudioClip",
+                to=uuid_clip,
+            )
     return

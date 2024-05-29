@@ -19,13 +19,32 @@ logger = logging.getLogger(__name__)
 
 
 def delete_schema():
-    logger.info("deleting class %s and objects...", "AudioFrame")
-    w_client.collections.delete("AudioFrame")
+    logger.info("deleting class %s and objects...", "AudioClip")
+    w_client.collections.delete("AudioClip")
     logger.info("deleting class %s and objects...", "Segment")
     w_client.collections.delete("Segment")
 
 
 def create_schema():
+    logger.info("Creating class %s...", "AudioClip")
+    w_client.collections.create(
+        "AudioClip",
+        description="The audio clip's information and meta data.",
+        vectorizer_config=Configure.Vectorizer.text2vec_transformers(
+            vectorize_collection_name=False
+        ),
+        properties=[
+            Property(
+                name="title",
+                data_type=DataType.TEXT,
+                description="Title of audio clip file.",
+            ),
+        ],
+        vector_index_config=Configure.VectorIndex.hnsw(
+            distance_metric=VectorDistances.COSINE
+        ),
+    )
+
     logger.info("Creating class %s...", "Segment")
     w_client.collections.create(
         "Segment",
@@ -50,28 +69,10 @@ def create_schema():
                 description="End timestamp of segment.",
             ),
         ],
-        vector_index_config=Configure.VectorIndex.hnsw(
-            distance_metric=VectorDistances.COSINE
-        ),
-    )
-    logger.info("Creating class %s...", "AudioClip")
-    w_client.collections.create(
-        "AudioClip",
-        description="The audio clip's information and meta data.",
-        vectorizer_config=Configure.Vectorizer.text2vec_transformers(
-            vectorize_collection_name=False
-        ),
-        properties=[
-            Property(
-                name="title",
-                data_type=DataType.TEXT,
-                description="Title of audio clip file.",
-            ),
-        ],
         references=[
             ReferenceProperty(
-                name="hasSegment",
-                target_collection="Segment",
+                name="belongsToAudioClip",
+                target_collection="AudioClip",
                 description="An audio clip is composed by a number of segments that contain transcripted speech.",
             )
         ],
