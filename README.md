@@ -1,6 +1,6 @@
 # Speech Audio Semantic Text Search
 
-A library system to search through the context of audio clips in text terms.
+A local library system to store speech audio files and search for speech context through text prompts.
 
 ## Table of Contents
 
@@ -10,8 +10,6 @@ A library system to search through the context of audio clips in text terms.
     - [Prerequisites](#prerequisites)
     - [Installation](#installation)
   - [Usage](#usage)
-  - [Contributing](#contributing)
-  - [Acknowledgments](#acknowledgments)
 
 ## About
 
