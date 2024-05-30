@@ -1,15 +1,6 @@
-from typing import List
-
 import IPython.display as ipd
 import matplotlib.pyplot as plt
 import numpy as np
-
-
-def batch_data(data: np.ndarray, batch_size) -> List[np.array]:
-    return [
-        np.array(data[i : min(i + batch_size, len(data))])
-        for i in range(0, len(data), batch_size)
-    ]
 
 
 def print_plot_play(x, Fs, text=""):
@@ -22,9 +13,7 @@ def print_plot_play(x, Fs, text=""):
         Fs: Sampling rate of x
         text: Text to print
     """
-    print(
-        "%s Fs = %d, x.shape = %s, x.dtype = %s" % (text, Fs, x.shape, x.dtype)
-    )
+    print("%s Fs = %d, x.shape = %s, x.dtype = %s" % (text, Fs, x.shape, x.dtype))
     plt.figure(figsize=(8, 2))
     time = np.arange(0, x.shape[0] / Fs, 1 / Fs)
     plt.plot(time, x, color="gray")

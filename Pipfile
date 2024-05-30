@@ -4,14 +4,10 @@ verify_ssl = true
 name = "pypi"
 
 [dev-packages]
-pylint = "*"
-isort = "*"
-mypy = "*"
-black = "*"
-bandit = "*"
-flake8 = "*"
+ruff="*"
 jupyterlab = "*"
 notebook = "*"
+weaviate-cli = "*"
 
 [packages]
 pandas = "*"
@@ -21,6 +17,7 @@ pydub = "*"
 matplotlib = "*"
 ipython = "*"
 weaviate-client = "*"
+faster-whisper = "*"
 
 [requires]
 python_version = "3.10"
