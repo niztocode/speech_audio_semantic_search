@@ -68,6 +68,11 @@ def create_schema():
                 data_type=DataType.NUMBER,
                 description="End timestamp of segment.",
             ),
+            Property(
+                name="speaker",
+                data_type=DataType.TEXT,
+                description="Name of the speaker.",
+            ),
         ],
         references=[
             ReferenceProperty(

@@ -3,6 +3,13 @@ import matplotlib.pyplot as plt
 import numpy as np
 
 
+def batch_data(data: np.ndarray, batch_size) -> list[np.array]:
+    return [
+        np.array(data[i : min(i + batch_size, len(data))])
+        for i in range(0, len(data), batch_size)
+    ]
+
+
 def print_plot_play(x, Fs, text=""):
     """1. Prints information about an audio singal, 2. plots the waveform, and 3. Creates player
 
@@ -22,4 +29,16 @@ def print_plot_play(x, Fs, text=""):
     plt.ylabel("Amplitude")
     plt.tight_layout()
     plt.show()
+    ipd.display(ipd.Audio(data=x, rate=Fs))
+
+
+def play(x, Fs):
+    """Creates player for audio
+
+    Notebook: C1/B_PythonAudio.ipynb
+
+    Args:
+        x: Input signal
+        Fs: Sampling rate of x
+    """
     ipd.display(ipd.Audio(data=x, rate=Fs))

@@ -18,6 +18,12 @@ matplotlib = "*"
 ipython = "*"
 weaviate-client = "*"
 faster-whisper = "*"
+"pyannote.audio" = "*"
+torchvision = "*"
+torchaudio = "*"
+playsound = "*"
+pyobjc = "*"
+numpy = "<2.0"
 
 [requires]
 python_version = "3.10"
