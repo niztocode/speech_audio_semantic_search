@@ -15,3 +15,8 @@ models/
 *__pycache__/
 *.py[cod]
 *$py.class
+
+frontend/
+*.old
+
+challenge2_2/archive
